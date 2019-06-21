@@ -284,7 +284,8 @@ int main(int argc, char *argv[])
     if (hFont  ) DeleteObject(hFont  );
     if (hBrush1) DeleteObject(hBrush1);
     if (hBrush2) DeleteObject(hBrush2);
-    bmp_save(&mybmp2, "font.bmp");
+    sprintf(file, "font%d.bmp", fontsize);
+    bmp_save(&mybmp2, file);
     bmp_destroy(&mybmp2);
     return 0;
 }
