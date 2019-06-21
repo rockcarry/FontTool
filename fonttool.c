@@ -3,15 +3,15 @@
 #include <stdio.h>
 #include <math.h>
 
-/* BMP ¶ÔÏóµÄÀàÐÍ¶¨Òå */
+/* BMP å¯¹è±¡çš„ç±»åž‹å®šä¹‰ */
 typedef struct {
-    int   width;   /* ¿í¶È */
-    int   height;  /* ¸ß¶È */
-    int   stride;  /* ÐÐ×Ö½ÚÊý */
-    void *pdata;   /* Ö¸ÏòÊý¾Ý */
+    int   width;   /* å®½åº¦ */
+    int   height;  /* é«˜åº¦ */
+    int   stride;  /* è¡Œå­—èŠ‚æ•° */
+    void *pdata;   /* æŒ‡å‘æ•°æ® */
 } BMP;
 
-// ÄÚ²¿ÀàÐÍ¶¨Òå
+// å†…éƒ¨ç±»åž‹å®šä¹‰
 typedef BYTE  uint8_t ;
 typedef WORD  uint16_t;
 typedef DWORD uint32_t;
@@ -36,13 +36,13 @@ typedef struct {
 } BMPFILEHEADER;
 #pragma pack()
 
-/* ÄÚ²¿º¯ÊýÊµÏÖ */
+/* å†…éƒ¨å‡½æ•°å®žçŽ° */
 static void bmp_create(BMP *pb, int w, int h)
 {
     pb->width = w;
     pb->height= h;
     pb->stride=(w * 3 + 3) / 4 * 4;
-    pb->pdata = malloc(pb->width * pb->stride);
+    pb->pdata = malloc(pb->height * pb->stride);
 }
 
 static void bmp_destroy(BMP *pb)
