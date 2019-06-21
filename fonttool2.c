@@ -85,6 +85,52 @@ static int bmp_save(BMP *pb, char *file)
     return fp ? 0 : -1;
 }
 
+static int bmp_save16(BMP *pb, char *file)
+{
+    BMPFILEHEADER header = {0};
+    int           stride = (pb->width * 2 + 3) / 4 * 4;
+    FILE         *fp     = NULL;
+    uint8_t      *pdata;
+    int           r, g, b, i, j;
+    uint16_t      c;
+    uint32_t      mask;
+
+    header.bfType        = ('B' << 0) | ('M' << 8);
+    header.bfSize        = sizeof(header) + 3 * sizeof(uint32_t) + stride * pb->height;
+    header.bfOffBits     = sizeof(header) + 3 * sizeof(uint32_t);
+    header.biSize        = 40;
+    header.biWidth       = pb->width;
+    header.biHeight      = pb->height;
+    header.biPlanes      = 1;
+    header.biBitCount    = 16;
+    header.biCompression = 3;
+    header.biSizeImage   = stride * pb->height;
+
+    fp = fopen(file, "wb");
+    if (fp) {
+        fwrite(&header, sizeof(header), 1, fp);
+        mask  = 0x1f << 10; fwrite(&mask, sizeof(mask), 1, fp);
+        mask  = 0x1f <<  5; fwrite(&mask, sizeof(mask), 1, fp);
+        mask  = 0x1f <<  0; fwrite(&mask, sizeof(mask), 1, fp);
+        pdata = (uint8_t*)pb->pdata + pb->stride * pb->height;
+        for (i=0; i<pb->height; i++) {
+            for (j=0; j<pb->width; j++) {
+                b = *pdata++;
+                g = *pdata++;
+                r = *pdata++;
+                c = ((r & 0x1f) << 10) | ((g & 0x1f) << 5) | ((b & 0x1f) << 0);
+                fwrite(&c, sizeof(c), 1, fp);
+            }
+            for (j=pb->width*2; j<stride; j++) fputc(0, fp);
+            pdata -= pb->width * 3;
+            pdata -= pb->stride;
+        }
+        fclose(fp);
+    }
+
+    return fp ? 0 : -1;
+}
+
 static void bmp_setpixel(BMP *pb, int x, int y, int r, int g, int b)
 {
     uint8_t *pbyte = pb->pdata;
@@ -139,7 +185,7 @@ int main(int argc, char *argv[])
     RECT        rect          = { 0, 0, 255, 255 };
     int         br, bb, bg, fr, fg, fb, er, eg, eb;
     int         x, y, i;
-    char       *str = "0123456789-:";
+    char       *str = "0123456789-: ";
 
     if (argc < 2) {
         MessageBox(NULL, "usage:\n\nfonttool fontname fontsize fontweight bkcolor fontcolor edgecolor distparam\n", "FontTool", MB_OK);
