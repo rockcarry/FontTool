@@ -120,9 +120,10 @@ int main(int argc, char *argv[])
     char        fontname[256] = "Arial";
     int         fontsize      = 16;
     int         fontweight    = 500;
+    int         edgesize      = 0;
     DWORD       fbkgcolor     = RGB(255, 0  , 255);
     DWORD       fontcolor     = RGB(255, 255, 255);
-    DWORD       fedgcolor     = (DWORD)-1;
+    DWORD       fedgcolor     = RGB(0  , 0  , 0  );
     int         distparam     = 288;
     HWND        hDeskTopWnd   = GetDesktopWindow();
     HDC         hDeskTopDC    = GetDC(hDeskTopWnd);
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
     int         x, y, i;
 
     if (argc < 2) {
-        MessageBox(NULL, "usage:\n\nfonttool fontname fontsize fontweight bkcolor fontcolor edgecolor distparam\n", "FontTool", MB_OK);
+        MessageBox(NULL, "usage:\n\nfonttool fontname fontsize fontweight bkcolor fontcolor edgesize edgecolor distparam\n", "FontTool", MB_OK);
     }
 
     if (argc >= 2) strcpy(fontname, argv[1]);
@@ -149,8 +150,9 @@ int main(int argc, char *argv[])
     if (argc >= 4) fontweight = atoi(argv[3]);
     if (argc >= 5) fbkgcolor  = atoi(argv[4]);
     if (argc >= 6) fontcolor  = atoi(argv[5]);
-    if (argc >= 7) fedgcolor  = atoi(argv[6]);
-    if (argc >= 8) distparam  = atoi(argv[7]);
+    if (argc >= 7) edgesize   = atoi(argv[6]);
+    if (argc >= 8) fedgcolor  = atoi(argv[7]);
+    if (argc >= 9) distparam  = atoi(argv[8]);
 
     br = (fbkgcolor >> 0 ) & 0xff;
     bg = (fbkgcolor >> 8 ) & 0xff;
@@ -173,7 +175,7 @@ int main(int argc, char *argv[])
     bmpinfo.bmiHeader.biCompression = BI_RGB;
     hBitmap = CreateDIBSection(hMemDC, &bmpinfo, DIB_RGB_COLORS, (void**)&pbmpbuf, NULL, 0);
     mybmp1.width = 256;
-    mybmp1.height=(fedgcolor == (DWORD)-1) ? fontsize : fontsize + 2;
+    mybmp1.height=(fedgcolor == (DWORD)-1) ? fontsize : fontsize + edgesize;
     mybmp1.stride= 256 * 3;
     mybmp1.pdata = pbmpbuf;
     bmp_create(&mybmp2, mybmp1.width, mybmp1.height);
@@ -196,29 +198,24 @@ int main(int argc, char *argv[])
     for (i=' '; i<='~'; i++) {
         GetCharWidthA(hMemDC, i, i, &mybmp1.width);
         GetCharWidthA(hMemDC, i, i, &mybmp2.width);
-        if (fedgcolor != (DWORD)-1) {
-            mybmp1.width += 2;
-            mybmp2.width += 2;
-        }
+        mybmp1.width += edgesize;
+        mybmp2.width += edgesize;
 
         if (distparam == -1) {
             FillRect(hMemDC, &rect, hBrush2);
-            if (fedgcolor != (DWORD)-1) {
+            if (edgesize) {
+                int x, y;
                 SetTextColor(hMemDC, RGB(eb, eg, er));
-                TextOutA(hMemDC, 0, 0, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 1, 0, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 2, 0, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 0, 1, (LPCSTR)&i, 1);
-//              TextOutA(hMemDC, 1, 1, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 2, 1, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 0, 2, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 1, 2, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 2, 2, (LPCSTR)&i, 1);
+                for(y=0; y<=edgesize; y++) {
+                    for(x=0; x<=edgesize; x++) {
+                        TextOutA(hMemDC, x, y, (LPCSTR)&i, 1);
+                    }
+                }
             }
 
             SetTextColor(hMemDC, RGB(fb, fg, fr));
-            if (fedgcolor != (DWORD)-1) {
-                TextOutA(hMemDC, 1, 1, (LPCSTR)&i, 1);
+            if (edgesize) {
+                TextOutA(hMemDC, edgesize / 2, edgesize / 2, (LPCSTR)&i, 1);
             } else {
                 TextOutA(hMemDC, 0, 0, (LPCSTR)&i, 1);
             }
@@ -238,17 +235,15 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if (fedgcolor != (DWORD)-1) {
+            if (edgesize) {
+                int x, y;
                 FillRect(hMemDC, &rect, hBrush1);
-                TextOutA(hMemDC, 0, 0, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 1, 0, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 2, 0, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 0, 1, (LPCSTR)&i, 1);
-//              TextOutA(hMemDC, 1, 1, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 2, 1, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 0, 2, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 1, 2, (LPCSTR)&i, 1);
-                TextOutA(hMemDC, 2, 2, (LPCSTR)&i, 1);
+                for(y=0; y<=edgesize; y++) {
+                    for(x=0; x<=edgesize; x++) {
+                        TextOutA(hMemDC, x, y, (LPCSTR)&i, 1);
+                    }
+                }
+
                 for (y=0; y<mybmp2.height; y++) {
                     for (x=0; x<mybmp2.width; x++) {
                         int r, g, b;
@@ -261,8 +256,8 @@ int main(int argc, char *argv[])
             }
 
             FillRect(hMemDC, &rect, hBrush1);
-            if (fedgcolor != (DWORD)-1) {
-                TextOutA(hMemDC, 1, 1, (LPCSTR)&i, 1);
+            if (edgesize) {
+                TextOutA(hMemDC, edgesize / 2, edgesize / 2, (LPCSTR)&i, 1);
             } else {
                 TextOutA(hMemDC, 0, 0, (LPCSTR)&i, 1);
             }
