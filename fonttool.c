@@ -3,15 +3,15 @@
 #include <stdio.h>
 #include <math.h>
 
-/* BMP å¯¹è±¡çš„ç±»åž‹å®šä¹‰ */
+/* BMP ¶ÔÏóµÄÀàÐÍ¶¨Òå */
 typedef struct {
-    int   width;   /* å®½åº¦ */
-    int   height;  /* é«˜åº¦ */
-    int   stride;  /* è¡Œå­—èŠ‚æ•° */
-    void *pdata;   /* æŒ‡å‘æ•°æ® */
+    int   width;   /* ¿í¶È */
+    int   height;  /* ¸ß¶È */
+    int   stride;  /* ÐÐ×Ö½ÚÊý */
+    void *pdata;   /* Ö¸ÏòÊý¾Ý */
 } BMP;
 
-// å†…éƒ¨ç±»åž‹å®šä¹‰
+// ÄÚ²¿ÀàÐÍ¶¨Òå
 typedef BYTE  uint8_t ;
 typedef WORD  uint16_t;
 typedef DWORD uint32_t;
@@ -36,7 +36,7 @@ typedef struct {
 } BMPFILEHEADER;
 #pragma pack()
 
-/* å†…éƒ¨å‡½æ•°å®žçŽ° */
+/* ÄÚ²¿º¯ÊýÊµÏÖ */
 static void bmp_create(BMP *pb, int w, int h)
 {
     pb->width = w;
@@ -114,9 +114,17 @@ static double color_distance(int r1, int g1, int b1, int r2, int g2, int b2)
     return sqrt((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2));
 }
 
+static int get_text_width(HDC hdc, char *str)
+{
+    RECT rect = {};
+    DrawText(hdc, str, -1, &rect, DT_CALCRECT);
+    return rect.right;
+}
+
 int main(int argc, char *argv[])
 {
     char        file[MAX_PATH];
+    char       *fontstr       = " 0123456789-:ÐÇÆÚÒ»¶þÈýËÄÎåÁùÈÕ";
     char        fontname[256] = "Arial";
     int         fontsize      = 16;
     int         fontweight    = 500;
@@ -153,6 +161,7 @@ int main(int argc, char *argv[])
     if (argc >= 7) edgesize   = atoi(argv[6]);
     if (argc >= 8) fedgcolor  = atoi(argv[7]);
     if (argc >= 9) distparam  = atoi(argv[8]);
+    if (argc >=10) fontstr    = argv[9];
 
     br = (fbkgcolor >> 0 ) & 0xff;
     bg = (fbkgcolor >> 8 ) & 0xff;
@@ -195,9 +204,12 @@ int main(int argc, char *argv[])
     SetBkMode   (hMemDC, TRANSPARENT);
     SetTextColor(hMemDC, RGB(255, 255, 255));
 
-    for (i=' '; i<='~'; i++) {
-        GetCharWidthA(hMemDC, i, i, &mybmp1.width);
-        GetCharWidthA(hMemDC, i, i, &mybmp2.width);
+    for (i=0; fontstr[i]; ) {
+        int  chinese = (unsigned)fontstr[i] > 0xA0;
+        char str[3]  = { (unsigned)fontstr[i] };
+        if (chinese && i + 1 < strlen(fontstr)) str[1] = (unsigned)fontstr[i + 1];
+        i += chinese ? 2 : 1;
+        mybmp1.width  = mybmp2.width = get_text_width(hMemDC, str);
         mybmp1.width += edgesize;
         mybmp2.width += edgesize;
 
@@ -208,16 +220,16 @@ int main(int argc, char *argv[])
                 SetTextColor(hMemDC, RGB(eb, eg, er));
                 for(y=0; y<=edgesize; y++) {
                     for(x=0; x<=edgesize; x++) {
-                        TextOutA(hMemDC, x, y, (LPCSTR)&i, 1);
+                        TextOutA(hMemDC, x, y, str, strlen(str));
                     }
                 }
             }
 
             SetTextColor(hMemDC, RGB(fb, fg, fr));
             if (edgesize) {
-                TextOutA(hMemDC, edgesize / 2, edgesize / 2, (LPCSTR)&i, 1);
+                TextOutA(hMemDC, edgesize / 2, edgesize / 2, str, strlen(str));
             } else {
-                TextOutA(hMemDC, 0, 0, (LPCSTR)&i, 1);
+                TextOutA(hMemDC, 0, 0, str, strlen(str));
             }
 
             for (y=0; y<mybmp2.height; y++) {
@@ -240,7 +252,7 @@ int main(int argc, char *argv[])
                 FillRect(hMemDC, &rect, hBrush1);
                 for(y=0; y<=edgesize; y++) {
                     for(x=0; x<=edgesize; x++) {
-                        TextOutA(hMemDC, x, y, (LPCSTR)&i, 1);
+                        TextOutA(hMemDC, x, y, str, strlen(str));
                     }
                 }
 
@@ -257,9 +269,9 @@ int main(int argc, char *argv[])
 
             FillRect(hMemDC, &rect, hBrush1);
             if (edgesize) {
-                TextOutA(hMemDC, edgesize / 2, edgesize / 2, (LPCSTR)&i, 1);
+                TextOutA(hMemDC, edgesize / 2, edgesize / 2, str, strlen(str));
             } else {
-                TextOutA(hMemDC, 0, 0, (LPCSTR)&i, 1);
+                TextOutA(hMemDC, 0, 0, str, strlen(str));
             }
             for (y=0; y<mybmp2.height; y++) {
                 for (x=0; x<mybmp2.width; x++) {
@@ -272,7 +284,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        sprintf(file, "asc_%03d.bmp", i);
+        sprintf(file, "font_%02dx%02d_%03d.bmp", mybmp1.width, mybmp1.height, i);
         bmp_save(&mybmp2, file);
     }
 
