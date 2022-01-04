@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
     HFONT       hFont         = NULL;
     RECT        rect          = { 0, 0, 255, 255 };
     int         br, bb, bg, fr, fg, fb, er, eg, eb;
-    int         x, y, i;
+    int         x, y, i, n;
 
     if (argc < 2) {
         MessageBox(NULL, "usage:\n\nfonttool fontname fontsize fontweight bkcolor fontcolor edgesize edgecolor distparam\n", "FontTool", MB_OK);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     SetBkMode   (hMemDC, TRANSPARENT);
     SetTextColor(hMemDC, RGB(255, 255, 255));
 
-    for (i=0; fontstr[i]; ) {
+    for (i=0,n=0; fontstr[i]; n++) {
         int  chinese = (unsigned)fontstr[i] > 0xA0;
         char str[3]  = { (unsigned)fontstr[i] };
         if (chinese && i + 1 < strlen(fontstr)) str[1] = (unsigned)fontstr[i + 1];
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        sprintf(file, "font_%02dx%02d_%03d.bmp", mybmp1.width, mybmp1.height, i);
+        sprintf(file, "font_%02d_%03d.bmp", mybmp1.height, n);
         bmp_save(&mybmp2, file);
     }
 
