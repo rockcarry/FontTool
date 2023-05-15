@@ -1,0 +1,77 @@
+how to convert LOGO png to 4bit bmp file
+
+
+1. convert png to 24bit bmp file
+--------------------------------
+you can use photoshop or mspaint to convert png to 24bit bmp file.
+please use black color as transparent color.
+
+
+2. find best palette of LOGO bmp file
+-------------------------------------
+palette.exe -p logo.bmp 8
+
+# ./palette.exe -p logo.bmp 8
+ 80  80  80
+254 254 254
+207 207 207
+180 180 180
+149 149 149
+110 110 110
+ 50  50  50
+  0   0   0
+
+create a pal file logo.pal
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+110 110 110
+149 149 149
+180 180 180
+207 207 207
+255 255 255
+
+colors 0 - 10 are reserved, set them to (0, 0, 0)
+the remaining 5 colors come from the output of palette.exe tool.
+
+
+3. use dither tool to reduce colors
+-----------------------------------
+dither.exe logo.bmp logo.pal nodither
+
+we can get the dither-logo.bmp file, which is 24bit bitmap, but only 16 colors
+in this bmp file.
+
+
+4. convert to 4bit bitmap file
+------------------------------
+bmp24tobmp4.exe dither-logo.bmp logo.pal
+the dither-logo.bmp file can be used as LOGO bmp file.
+
+
+5. source code to change
+------------------------
+because bitmap palette changed, so we need modify palette in source code:
+
+bsp/apical/MI_package/st_rgn.c
+bsp/rtos/sc/application/rtos_preload.c
+
+change the g_stPaletteTable. replace the corresponding color palette values.
+you can also change the color alpha value for translucency effect.
+
+
+
+chenk@apical.com.cn
+2022/11/26
+
+
+
+

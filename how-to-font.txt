@@ -1,0 +1,62 @@
+how to create font .bin file
+
+1. fonttool.exe to generate font bmp file
+-----------------------------------------
+fonttool.c need windows + msys2 enviroment to build.
+because this tool using GDI32 to draw font, so this tool only run on windows.
+
+usage of fonttool, please refer to the comment in makefont.bat
+
+usually we use BLACK color RGB(0, 0, 0) as transparent color.
+and use color BLACK color RGB(1, 1, 1) as font edge color.
+
+so we need three colors in our palette:
+RGB(0, 0, 0) // transparent color
+...
+RGB(1, 0, 1) // edge color
+...
+RGB(255, 255, 255) // font color
+
+so before run fonttool.exe, we need create a palette file font.pal:
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  1   1   1
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+  0   0   0
+255 255 255
+
+then run makefont.bat to create font .bmp files
+
+
+2. merge .bmp files to bin file
+-------------------------------
+in order to speed up the font loading, we merge .bmp file to one bin file
+run mergefont.bat to merge .bmp file to bin file
+
+
+3. source code to change
+------------------------
+we should make sure the palette used in source code:
+
+bsp/apical/MI_package/st_rgn.c
+bsp/rtos/sc/application/rtos_preload.c
+
+the colors used in palette are correctly set.
+
+
+chenk@apical.com.cn
+2022/11/26
+
+
+
+
