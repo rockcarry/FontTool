@@ -5,10 +5,10 @@
 #include <math.h>
 
 typedef struct {
-    int   width;   /* ¿í¶È */
-    int   height;  /* ¸ß¶È */
-    int   stride;  /* ĞĞ×Ö½ÚÊı */
-    void *pdata;   /* Ö¸ÏòÊı¾İ */
+    int   width;   /* å®½åº¦ */
+    int   height;  /* é«˜åº¦ */
+    int   stride;  /* è¡Œå­—èŠ‚æ•° */
+    void *pdata;   /* æŒ‡å‘æ•°æ® */
 } BMP;
 
 #pragma pack(1)
@@ -138,7 +138,7 @@ static int get_text_width(HDC hdc, char *str)
 {
     RECT rect = {};
     DrawText(hdc, str, -1, &rect, DT_CALCRECT);
-    return rect.right - 1;
+    return rect.right;
 }
 
 #ifdef _TOOL1_
@@ -176,7 +176,7 @@ static void bmp_dilation(BMP *pb)
 int main(int argc, char *argv[])
 {
     char        file[MAX_PATH];
-    char       *fontstr       = " 0123456789-:ĞÇÆÚÒ»¶şÈıËÄÎåÁùÈÕ";
+    char       *fontstr       = " 0123456789-:æ˜ŸæœŸä¸€äºŒä¸‰å››äº”å…­æ—¥";
     char        fontname[256] = "Arial";
     int         fontsize      = 16;
     int         fontweight    = 500;
@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
     }
     if (fp) { fclose(fp); fp = NULL; }
 
-    mybmp.width = get_text_width(hMemDC, "ºº");
+    mybmp.width = get_text_width(hMemDC, "æ±‰");
     snprintf(file, sizeof(file), "hzk_%02dx%02d.bin", mybmp.width, mybmp.height);
     printf("\ncreate file %s ...\n", file);
     fp = fopen(file, "wb");
