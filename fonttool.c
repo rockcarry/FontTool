@@ -5,10 +5,10 @@
 #include <math.h>
 
 typedef struct {
-    int   width;   /* å®½åº¦ */
-    int   height;  /* é«˜åº¦ */
-    int   stride;  /* è¡Œå­—èŠ‚æ•° */
-    void *pdata;   /* æŒ‡å‘æ•°æ® */
+    int   width;   /* ¿í¶È */
+    int   height;  /* ¸ß¶È */
+    int   stride;  /* ĞĞ×Ö½ÚÊı */
+    void *pdata;   /* Ö¸ÏòÊı¾İ */
 } BMP;
 
 #pragma pack(1)
@@ -176,7 +176,7 @@ static void bmp_dilation(BMP *pb)
 int main(int argc, char *argv[])
 {
     char        file[MAX_PATH];
-    char       *fontstr       = " 0123456789-:æ˜ŸæœŸä¸€äºŒä¸‰å››äº”å…­æ—¥";
+    char       *fontstr       = " 0123456789-:ĞÇÆÚÒ»¶şÈıËÄÎåÁùÈÕ";
     char        fontname[256] = "Arial";
     int         fontsize      = 16;
     int         fontweight    = 500;
@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
     }
     if (fp) { fclose(fp); fp = NULL; }
 
-    mybmp.width = get_text_width(hMemDC, "æ±‰");
+    mybmp.width = get_text_width(hMemDC, "ºº");
     snprintf(file, sizeof(file), "hzk_%02dx%02d.bin", mybmp.width, mybmp.height);
     printf("\ncreate file %s ...\n", file);
     fp = fopen(file, "wb");
