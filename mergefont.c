@@ -39,6 +39,8 @@ typedef struct {
     int32_t reserved3;
     int32_t row_spacing;
     int32_t col_spacing;
+    int32_t reserved4;
+    int32_t reserved5;
     int32_t asc_yoffset;
     int32_t char_num;
     BMP     font_bmp[0];
@@ -50,6 +52,8 @@ typedef struct {
     int32_t reserved3;
     int32_t row_spacing;
     int32_t col_spacing;
+    int32_t reserved4;
+    int32_t reserved5;
     int32_t asc_yoffset;
     int32_t asc_width;
     int32_t asc_height;
