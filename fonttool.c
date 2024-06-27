@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <iconv.h>
 
 typedef struct {
     int   width;   /* ¿í¶È */
@@ -287,6 +288,25 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _TOOL2_
+static void string_charset_convert(char *dstbuf, size_t dstlen, char *dstcharset, char *srcbuf, size_t srclen, char *srccharset)
+{
+    iconv_t hiconv = iconv_open(dstcharset, srccharset);
+    if (hiconv) {
+        iconv(hiconv, &srcbuf, &srclen, &dstbuf, &dstlen);
+        iconv_close(hiconv);
+    }
+}
+
+#define GB2313_TOTAL_QU  87
+#define GB2313_TOTAL_WEI 94
+int gb2312_qu_to_byte0 (int qu ) { return qu  + 0xA1; }
+int gb2312_wei_to_byte1(int wei) { return wei + 0xA1; }
+
+#define BIG5_TOTAL_QU  87
+#define BIG5_TOTAL_WEI 157
+int big5_qu_to_byte0 (int qu ) { return qu  < 75 ? qu  + 0xA1 : qu  - 75 + 0xC9; }
+int big5_wei_to_byte1(int wei) { return wei < 63 ? wei + 0x40 : wei - 63 + 0xA1; }
+
 static int bmp_to_bits_array(BMP *pb, uint8_t *buf, int len)
 {
     int total_bits = (pb->width * pb->height + 7) & ~7;
@@ -327,13 +347,15 @@ int main(int argc, char *argv[])
     RECT        rect          = { 0, 0, 255, 255 };
     uint8_t     buf[32 * 256] = {0};
     FILE       *fp            = NULL;
+    char       *charset       = "gb2312";
     int         i, j, n;
 
-    if (argc <  2) MessageBox(NULL, "usage:\n\nfonttool fontname fontsize fontweight bkcolor fontcolor edgesize edgecolor distparam\n", "FontTool", MB_OK);
+    if (argc <  2) MessageBox(NULL, "usage:\n\nfonttool fontname fontsize fontweight distparam charset\n", "FontTool", MB_OK);
     if (argc >= 2) strcpy(fontname, argv[1]);
     if (argc >= 3) fontsize   = atoi(argv[2]);
     if (argc >= 4) fontweight = atoi(argv[3]);
     if (argc >= 5) distparam  = atoi(argv[4]);
+    if (argc >= 6) charset    = argv[5];
 
     // bitmap
     bmpinfo.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
@@ -365,7 +387,7 @@ int main(int argc, char *argv[])
     fp = fopen(file, "wb");
     for (i = ' '; i <= '~'; i++) {
         char str[3] = { i };
-        printf("\r%s", str);
+        printf("\r%s", str); fflush(stdout);
         FillRect(hMemDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
         TextOutA(hMemDC, 0, 0, str, strlen(str));
         bmp_binaryzation(&mybmp, distparam);
@@ -379,16 +401,43 @@ int main(int argc, char *argv[])
     snprintf(file, sizeof(file), "hzk_%02dx%02d.bin", mybmp.width, mybmp.height);
     printf("\ncreate file %s ...\n", file);
     fp = fopen(file, "wb");
-    for (i = 1; i <= 87; i++) {
-        for (j = 1; j <= 94; j++) {
-            char str[3] = { 0xA0 + i, 0xA0 + j };
-            printf("\r%s", str);
-            FillRect(hMemDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-            TextOutA(hMemDC, 0, 0, str, strlen(str));
-            bmp_binaryzation(&mybmp, distparam);
-            n = bmp_to_bits_array(&mybmp, buf, sizeof(buf));
-            if (n == -1) break;
-            if (fp) fwrite(buf, 1, n, fp);
+    if (strcmp(charset, "gb2312") == 0) {
+        for (i = 0; i < GB2313_TOTAL_QU; i++) {
+            for (j = 0; j < GB2313_TOTAL_WEI; j++) {
+                char   str_gb2312[3] = "";
+                char   str_utf16 [3] = "";
+                size_t len_gb2312    = sizeof(str_gb2312);
+                size_t len_utf16     = sizeof(str_utf16 );
+                str_gb2312[0] = gb2312_qu_to_byte0 (i);
+                str_gb2312[1] = gb2312_wei_to_byte1(j);
+                printf("\r%s", str_gb2312);
+                string_charset_convert(str_utf16, len_utf16, "utf-16le", str_gb2312, len_gb2312, charset);
+                FillRect(hMemDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+                TextOutW(hMemDC, 0, 0, (LPCWSTR)str_utf16, 1);
+                bmp_binaryzation(&mybmp, distparam);
+                n = bmp_to_bits_array(&mybmp, buf, sizeof(buf));
+                if (n == -1) break;
+                if (fp) fwrite(buf, 1, n, fp);
+            }
+        }
+    } else if (strcmp(charset, "big5") == 0) {
+        for (i = 0; i < BIG5_TOTAL_QU; i++) {
+            for (j = 0; j < BIG5_TOTAL_WEI; j++) {
+                char   str_big5 [3] = "";
+                char   str_utf16[3] = "";
+                size_t len_big5     = sizeof(str_big5 );
+                size_t len_utf16    = sizeof(str_utf16);
+                str_big5[0] = big5_qu_to_byte0 (i);
+                str_big5[1] = big5_wei_to_byte1(j);
+                printf("\r%s", str_big5);
+                string_charset_convert(str_utf16, len_utf16, "utf-16le", str_big5, len_big5, charset);
+                FillRect(hMemDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+                TextOutW(hMemDC, 0, 0, (LPCWSTR)str_utf16, 1);
+                bmp_binaryzation(&mybmp, distparam);
+                n = bmp_to_bits_array(&mybmp, buf, sizeof(buf));
+                if (n == -1) break;
+                if (fp) fwrite(buf, 1, n, fp);
+            }
         }
     }
     if (fp) { fclose(fp); fp = NULL; }

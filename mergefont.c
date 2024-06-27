@@ -33,27 +33,40 @@ typedef struct {
     uint32_t  biClrImportant;
 } BMPFILEHEADER;
 
+#define FONT_COMMON_MEMBERS \
+    int32_t  font_type;     \
+    int32_t  file_size;     \
+    int32_t  load_mode;     \
+    int32_t  row_spacing;   \
+    int32_t  col_spacing;   \
+    uint32_t color_font;    \
+    uint32_t color_back;
+
 typedef struct {
-    int32_t reserved1;
-    int32_t reserved2;
-    int32_t reserved3;
-    int32_t row_spacing;
-    int32_t col_spacing;
-    int32_t reserved4;
-    int32_t reserved5;
+    int32_t  charsetchanged;
+    char     fontcharset[16];
+    char     textcharset[16];
+    int32_t  convertlen;
+    union {
+        int64_t reserved2;
+        char   *convertstr;
+    };
+    union {
+        int64_t reserved1;
+        void   *hiconv;
+    };
+} STRCVT;
+
+typedef struct {
+    FONT_COMMON_MEMBERS
     int32_t asc_yoffset;
     int32_t char_num;
     BMP     font_bmp[0];
 } BMFONT;
 
 typedef struct {
-    int32_t reserved1;
-    int32_t reserved2;
-    int32_t reserved3;
-    int32_t row_spacing;
-    int32_t col_spacing;
-    int32_t reserved4;
-    int32_t reserved5;
+    FONT_COMMON_MEMBERS
+    STRCVT  strcvt;
     int32_t asc_yoffset;
     int32_t asc_width;
     int32_t asc_height;
@@ -61,6 +74,11 @@ typedef struct {
     int32_t hzk_width;
     int32_t hzk_height;
     int32_t hzk_offset;
+    int32_t hzk_charset; // 0 - gb2312, 1 - big5
+    union {
+        int64_t  reserved1;
+        FILE    *fontfp;
+    };
 } DZFONT;
 #pragma pack()
 
@@ -115,7 +133,7 @@ int main(int argc, char *argv[])
     int     char_num, data_size, ret, i;
     BMFONT *font = NULL;
 
-    for (i=0; i<argc; i++) {
+    for (i = 0; i < argc; i++) {
         if      (strstr(argv[i], "--path=") == argv[i]) bmppath = argv[i] + strlen("--path=");
         else if (strstr(argv[i], "--out=" ) == argv[i]) outname = argv[i] + strlen("--out=" );
         else if (strstr(argv[i], "--size=") == argv[i]) fontsize= atoi(argv[i] + strlen("--size="));
@@ -144,7 +162,7 @@ int main(int argc, char *argv[])
     font = calloc(1, sizeof(BMFONT) + char_num * sizeof(BMP));
     if (font) {
         FILE *fp = fopen(outname, "wb");
-        font->reserved1   = FONT_TYPE_BM;
+        font->font_type   = FONT_TYPE_BM;
         font->row_spacing = row_spacing;
         font->col_spacing = col_spacing;
         font->asc_yoffset = asc_yoffset;
@@ -197,7 +215,7 @@ int main(int argc, char *argv[])
     char   *outname = "dzfont.bin";
     char   *ascfile = "asc_08x16.bin";
     char   *hzkfile = "hzk_16x16.bin";
-    DZFONT  font    = { FONT_TYPE_DZ, 2, 1, 1, 8, 16, 0, 16, 16, 0 };
+    DZFONT  font    = { FONT_TYPE_DZ, 0, 0, 2, 1, 0, 0, {}, 0, 8, 16, 0, 16, 16, 0, 0 };
     FILE   *fp      = NULL;
     int     i;
 
@@ -212,6 +230,7 @@ int main(int argc, char *argv[])
         else if (strstr(argv[i], "--row_spacing=") == argv[i]) font.row_spacing = atoi(argv[i] + strlen("--row_spacing="));
         else if (strstr(argv[i], "--col_spacing=") == argv[i]) font.col_spacing = atoi(argv[i] + strlen("--col_spacing="));
         else if (strstr(argv[i], "--asc_yoffset=") == argv[i]) font.asc_yoffset = atoi(argv[i] + strlen("--asc_yoffset="));
+        else if (strstr(argv[i], "--hzk_charset=") == argv[i]) font.hzk_charset = atoi(argv[i] + strlen("--hzk_charset="));
     }
 
     font.asc_offset = sizeof(DZFONT);
@@ -227,6 +246,7 @@ int main(int argc, char *argv[])
     printf("asc_offset : %d\n"   , font.asc_offset);
     printf("hzk_size   : %dx%d\n", font.hzk_width, font.hzk_height);
     printf("hzk_offset : %d\n"   , font.hzk_offset);
+    printf("hzk_charset: %d\n"   , font.hzk_charset);
 
     fp = fopen(outname, "wb");
     if (fp) {
