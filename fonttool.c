@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <iconv.h>
 
 typedef struct {
     int   width;   /* 宽度 */
@@ -174,6 +173,8 @@ static void bmp_dilation(BMP *pb)
     bmp_destroy(&bmp);
 }
 
+static char *s_full_charset = " 0123456789-:星期一二三四五六日!\"#$%&'()*+,-./;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
 int main(int argc, char *argv[])
 {
     char        file[MAX_PATH];
@@ -211,6 +212,7 @@ int main(int argc, char *argv[])
     if (argc >= 8) fedgcolor  = atoi(argv[7]);
     if (argc >= 9) distparam  = atoi(argv[8]);
     if (argc >=10) fontstr    = argv[9];
+    if (strcmp(fontstr, "full") == 0) fontstr = s_full_charset;
 
     br = (fbkgcolor >> 0 ) & 0xff;
     bg = (fbkgcolor >> 8 ) & 0xff;
@@ -255,7 +257,7 @@ int main(int argc, char *argv[])
         char str[3]  = { (unsigned)fontstr[i] };
         if (chinese && i + 1 < strlen(fontstr)) str[1] = (unsigned)fontstr[i + 1];
         i += chinese ? 2 : 1;
-        mybmp1.width = mybmp2.width = mybmp3.width = get_text_width(hMemDC, str) + 2 * edgesize;
+        if (str[0] != '&') mybmp1.width = mybmp2.width = mybmp3.width = get_text_width(hMemDC, str) + 2 * edgesize;
 
         FillRect(hMemDC, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
         TextOutA(hMemDC, edgesize, edgesize, str, strlen(str));
@@ -288,6 +290,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _TOOL2_
+#include <iconv.h>
 static void string_charset_convert(char *dstbuf, size_t dstlen, char *dstcharset, char *srcbuf, size_t srclen, char *srccharset)
 {
     iconv_t hiconv = iconv_open(dstcharset, srccharset);
